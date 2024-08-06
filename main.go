@@ -26,6 +26,11 @@ type Page struct {
 	Body  []byte
 }
 
+type Template struct {
+	Title string
+	Body  []byte
+}
+
 //const dirPerms int = 0700
 
 // save function
@@ -51,20 +56,30 @@ func loadPage(title string) (*Page, error) {
 }
 
 // main page is the index of website
-func index(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
+// can't get /.../ to work without /.../...
+// "page doesn't exist"
+// maybe find a way to load from tmpl folder
+func index(title string) (*Template, error) {
+	filename := filepath.Join(tmplDir, title+".html")
+	body, err := os.ReadFile(filepath.Clean(filename))
 	if err != nil {
-		// os.Create("dir")
-		http.Redirect(w, r, "/index/", http.StatusFound)
-		return
+		log.Printf("error loading index %q: %s", filename, err)
 	}
-	renderTemplate(w, "index", p)
+	return &Template{Title: title, Body: body}, nil
+
+	// p, err := loadPage(title)
+	// if err != nil {
+	// 	// os.Create("dir")
+	// 	// http.Redirect(w, r, "/index/", http.StatusFound)
+	// 	return
+	// }
+	// renderTemplate(w, "index", p)
 }
 
 // redirects to front page if user tries to view nonexistent page
-// func frontpageHandler(w http.ResponseWriter, r *http.Request) {
-// 	http.Redirect(w, r, "/test/", http.StatusFound)
-// }
+func frontpageHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/index/", http.StatusFound)
+}
 
 // creation handler for new pages
 func creationHandler(w http.ResponseWriter, r *http.Request, title string) {
@@ -134,7 +149,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 
 func main() {
 	// http.HandleFunc("/", frontpageHandler)
-	http.HandleFunc("/index/", makeHandler(index))
+	// http.HandleFunc("/index/", makeHandler(index))
 	http.HandleFunc("/create/", makeHandler(creationHandler))
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
