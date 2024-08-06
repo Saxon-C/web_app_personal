@@ -1,0 +1,5 @@
+-Spruce up the page templates by making them valid HTML and adding some CSS rules.
+-Make a navigation directory
+-Make it so if a page doesn't exist, you can't just create one from "edit"
+-Implement inter-page linking by converting instances of [PageName] to <a href="/view/PageName">PageName</a>. 
+    (hint: you could use regexp.ReplaceAllFunc to do this)
