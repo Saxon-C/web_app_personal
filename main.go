@@ -59,26 +59,26 @@ func loadPage(title string) (*Page, error) {
 // can't get /.../ to work without /.../...
 // "page doesn't exist"
 // maybe find a way to load from tmpl folder
-func index(title string) (*Template, error) {
-	filename := filepath.Join(tmplDir, title+".html")
-	body, err := os.ReadFile(filepath.Clean(filename))
-	if err != nil {
-		log.Printf("error loading index %q: %s", filename, err)
-	}
-	return &Template{Title: title, Body: body}, nil
+// func index(title string) (*Template, error) {
+// 	filename := filepath.Join(tmplDir, "index.html")
+// 	body, err := os.ReadFile(filepath.Clean(filename))
+// 	if err != nil {
+// 		log.Printf("error loading index %q: %s", filename, err)
+// 	}
+// 	return &Template{Title: title, Body: body}, nil
 
-	// p, err := loadPage(title)
-	// if err != nil {
-	// 	// os.Create("dir")
-	// 	// http.Redirect(w, r, "/index/", http.StatusFound)
-	// 	return
-	// }
-	// renderTemplate(w, "index", p)
-}
+// p, err := loadPage(title)
+// if err != nil {
+// 	// os.Create("dir")
+// 	// http.Redirect(w, r, "/index/", http.StatusFound)
+// 	return
+// }
+// renderTemplate(w, "index", p)
+// }
 
 // redirects to front page if user tries to view nonexistent page
 func frontpageHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/index/", http.StatusFound)
+	http.Redirect(w, r, "", http.StatusFound)
 }
 
 // creation handler for new pages
@@ -155,5 +155,5 @@ func main() {
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", http.FileServer(http.Dir("/Users/saxon/vscode/web_app_personal/tmpl"))))
 }

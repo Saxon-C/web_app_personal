@@ -1,11 +1,20 @@
-<!-- create the page header -->
-<h1>Page Creation</h1>
-<!-- action dictates what will be acted on, and method is what will happen to it -->
-<p>Enter new page details here:</p>
-<form action="/save/{{.Title}}" method="POST">
-<!-- creates a textbox called "title", size 3x20 -->
-<div><textarea name="title" rows="3" cols="20">{{printf "%s" .Title}}</textarea></div>
-<div><textarea name="body" rows="3" cols="40">{{printf "%s" .Body}}</textarea></div>
-<!-- input type, self explanatory, value is any name for what it will do -->
-<div><input type = "submit" value = "Save"></div>
-</form>
+<!DOCTYPE html>
+
+<head>
+    <title>Create New Page</title>
+</head>
+
+<body>
+    <h1>Create New Page</h1>
+
+    <form action="/save/{{.Title}}" method="POST">
+        <p>Enter Title for new page:</p>
+            <div><textarea name="title" rows="3" cols="40">{{printf "%s" .Title}}</textarea></div>
+        <p>Enter Body text for new page</p>
+            <div><textarea name="body" rows="3" cols="40">{{printf "%s" .Body}}</textarea></div>
+            <div><input type = "submit" value = "Save"></div>
+    </form>
+    
+</body>
+
+</html>
