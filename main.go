@@ -18,7 +18,7 @@ var templates = template.Must(template.ParseFiles(
 	filepath.Join(tmplDir, "edit.html"),
 	filepath.Join(tmplDir, "view.html"),
 	filepath.Join(tmplDir, "create.html"),
-	filepath.Join(tmplDir, "index.html"),
+	// filepath.Join(tmplDir, "index.html"),
 ))
 
 type Page struct {
@@ -26,47 +26,15 @@ type Page struct {
 	Body  []byte
 }
 
-// type Index struct {
-// 	Title string
-// 	//file extension
-// }
-
-// func loadIndex(title string) (*Index, error) {
-// 	// var i Index
-// 	f, err := os.Open("/tmpl")
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		log.Println("could not find proper path")
-
-// 	}
-// 	files, err := f.Readdir(0)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		log.Println("could not read dir")
-// 	}
-
-// 	for _, v := range files {
-// 		fmt.Println(v.Name(), v.IsDir())
-// 	}
-// 	return &Index{Title: title}, nil
-// }
-
-// type Template struct {
-// 	Title string
-// 	Body  []byte
-// }
-
-//const dirPerms int = 0700
-
 // save function
 func (p *Page) save() error {
 	// save page title into dataDir
 	filename := filepath.Join(dataDir, p.Title+".txt")
 	// if dataDir DNE then create w/ 0600 permissions
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		os.Mkdir(dataDir, 0700)
+		os.Mkdir(dataDir, 0600)
 	}
-	return os.WriteFile(filename, p.Body, 0700)
+	return os.WriteFile(filename, p.Body, 0600)
 }
 
 // loads pages from data dir
@@ -81,31 +49,34 @@ func loadPage(title string) (*Page, error) {
 }
 
 // redirects to front page if user tries to view nonexistent page
+// doesn't actually redirect right now because of infinite redirect loop
 func frontpageHandler(w http.ResponseWriter, r *http.Request) {
-	// search for all pages available
-	files, err := os.ReadDir("/Users/saxon/vscode/web_app_personal/data/")
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, file := range files {
-		fmt.Println(file.Name())
-	}
-
-	// search for index template and redirect to that page
-	tmpl, err := os.ReadDir("/Users/saxon/vscode/web_app_personal/tmpl/")
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, file := range tmpl {
-		fmt.Println(file.Name())
-		if file.Name() == "index.html" {
-			//endless loop occuring here
-			//http.Redirect(w, r, "/index/", http.StatusFound)
-			return
-		}
-	}
-
+	http.Redirect(w, r, "/view.html", http.StatusFound)
 }
+
+// 	// search for all pages available
+// 	files, err := os.ReadDir("/Users/saxon/vscode/web_app_personal/data/")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	for _, file := range files {
+// 		fmt.Println(file.Name())
+// 	}
+
+// 	// search for index template and redirect to that page
+// 	tmpl, err := os.ReadDir("/Users/saxon/vscode/web_app_personal/")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	for _, file := range tmpl {
+// 		fmt.Println(file.Name())
+// 		if file.Name() == "index.html" {
+// 			//endless loop occuring here
+// 			http.Redirect(w, r, "index.html", http.StatusFound)
+// 			return
+// 		}
+// 	}
+// }
 
 // creation handler for new pages
 func creationHandler(w http.ResponseWriter, r *http.Request, title string) {
@@ -113,6 +84,8 @@ func creationHandler(w http.ResponseWriter, r *http.Request, title string) {
 	if err != nil {
 		p = &Page{Title: title}
 	}
+	log.Println(w, r, title, "creation handler")
+	log.Println(p, "creation handler")
 	renderTemplate(w, "create", p)
 }
 
@@ -142,9 +115,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	err := p.save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("error saving page")
 		return
 	}
-	http.Redirect(w, r, "/view/"+title, http.StatusFound)
+	http.Redirect(w, r, "/data/"+title, http.StatusFound)
 }
 
 // calls the correct template based on URL
@@ -168,7 +142,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 		}
 		fn(w, r, m[2])
 
-		fmt.Println(m[:])
+		log.Println(m[:])
 	}
 }
 
@@ -182,5 +156,7 @@ func main() {
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 
-	log.Fatal(http.ListenAndServe(":8080", nil)) //http.FileServer(http.Dir("/Users/saxon/vscode/web_app_personal/"))))
+	// starts path in web_app folder
+	// gets redirected to index.html
+	log.Fatal(http.ListenAndServe(":8080", http.FileServer(http.Dir("/Users/saxon/vscode/web_app_personal"))))
 }

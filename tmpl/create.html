@@ -6,14 +6,23 @@
 
 <body>
     <h1>Create New Page</h1>
-
-    <form action="/view/{{.Title}}" method="POST">
+    <!-- NEEDS INPUT FOR .TITLE AND .BODY FROM STRUCT -->
+    <!-- <form action="/view/{{.Title}}" method="POST">
         <p>Enter Title for new page:</p>
             <div><textarea name="title" rows="3" cols="40">{{printf "%s" .Title}}</textarea></div>
         <p>Enter Body text for new page</p>
             <div><textarea name="body" rows="3" cols="40">{{printf "%s" .Body}}</textarea></div>
             <div><input type = "submit" value = "Save"></div>
-    </form>
+    </form> -->
+
+    <!-- testing -->
+     <form action="/data/page3.txt" method="POST">
+            <p> Enter title for new page:</p>
+                <div><textarea name="title" rows="3" cols="40">newpage.txt</textarea></div>
+            <p> Enter body for new page: </p>
+                <div><textarea name="title" rows="3" cols="40">newdata.txt</textarea></div>
+                <div><input type = "submit" value = "Save"></div>
+     </form>
 
 </body>
 
