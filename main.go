@@ -55,6 +55,11 @@ func frontpageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "404 not found.", http.StatusNotFound)
 		return
 	}
+	p, err := loadPage("index")
+	if err != nil {
+		p = &Page{Title: "index"}
+	}
+	renderTemplate(w, "index", p)
 }
 
 // 	// search for all pages available
