@@ -7,14 +7,14 @@
 <body>
     <h1>Create New Page</h1>
 
-    <form action="/save/{{.Title}}" method="POST">
+    <form action="/view/{{.Title}}" method="POST">
         <p>Enter Title for new page:</p>
             <div><textarea name="title" rows="3" cols="40">{{printf "%s" .Title}}</textarea></div>
         <p>Enter Body text for new page</p>
             <div><textarea name="body" rows="3" cols="40">{{printf "%s" .Body}}</textarea></div>
             <div><input type = "submit" value = "Save"></div>
     </form>
-    
+
 </body>
 
 </html>

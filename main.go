@@ -26,10 +26,35 @@ type Page struct {
 	Body  []byte
 }
 
-type Template struct {
-	Title string
-	Body  []byte
-}
+// type Index struct {
+// 	Title string
+// 	//file extension
+// }
+
+// func loadIndex(title string) (*Index, error) {
+// 	// var i Index
+// 	f, err := os.Open("/tmpl")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		log.Println("could not find proper path")
+
+// 	}
+// 	files, err := f.Readdir(0)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		log.Println("could not read dir")
+// 	}
+
+// 	for _, v := range files {
+// 		fmt.Println(v.Name(), v.IsDir())
+// 	}
+// 	return &Index{Title: title}, nil
+// }
+
+// type Template struct {
+// 	Title string
+// 	Body  []byte
+// }
 
 //const dirPerms int = 0700
 
@@ -55,30 +80,31 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
-// main page is the index of website
-// can't get /.../ to work without /.../...
-// "page doesn't exist"
-// maybe find a way to load from tmpl folder
-// func index(title string) (*Template, error) {
-// 	filename := filepath.Join(tmplDir, "index.html")
-// 	body, err := os.ReadFile(filepath.Clean(filename))
-// 	if err != nil {
-// 		log.Printf("error loading index %q: %s", filename, err)
-// 	}
-// 	return &Template{Title: title, Body: body}, nil
-
-// p, err := loadPage(title)
-// if err != nil {
-// 	// os.Create("dir")
-// 	// http.Redirect(w, r, "/index/", http.StatusFound)
-// 	return
-// }
-// renderTemplate(w, "index", p)
-// }
-
 // redirects to front page if user tries to view nonexistent page
 func frontpageHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "", http.StatusFound)
+	// search for all pages available
+	files, err := os.ReadDir("/Users/saxon/vscode/web_app_personal/data/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, file := range files {
+		fmt.Println(file.Name())
+	}
+
+	// search for index template and redirect to that page
+	tmpl, err := os.ReadDir("/Users/saxon/vscode/web_app_personal/tmpl/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, file := range tmpl {
+		fmt.Println(file.Name())
+		if file.Name() == "index.html" {
+			//endless loop occuring here
+			//http.Redirect(w, r, "/index/", http.StatusFound)
+			return
+		}
+	}
+
 }
 
 // creation handler for new pages
@@ -93,10 +119,8 @@ func creationHandler(w http.ResponseWriter, r *http.Request, title string) {
 // subdirectory for viewing of pages
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	p, err := loadPage(title)
+	// p, err := loadIndex(title)
 	if err != nil {
-		// redirects a page that does not exist to edit & create it
-		// don't want this for anyone.
-		// http.Redirect(w, r, "/create/"+title, http.StatusFound)
 		return
 	}
 	renderTemplate(w, "view", p)
@@ -131,7 +155,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	}
 }
 
-var validPath = regexp.MustCompile("^/(edit|save|view|index|create)/([a-zA-Z0-9]+)$")
+var validPath = regexp.MustCompile("^/(edit|save|view|index|create|test)/([a-zA-Z0-9]+)$")
 
 // makes and runs the handler (view, edit, save, etc.), checks to see if the path is valid
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
@@ -139,6 +163,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 		m := validPath.FindStringSubmatch(r.URL.Path)
 		if m == nil {
 			http.NotFound(w, r)
+			fmt.Printf("%v", m)
 			return
 		}
 		fn(w, r, m[2])
@@ -148,12 +173,14 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 }
 
 func main() {
-	// http.HandleFunc("/", frontpageHandler)
+
+	http.HandleFunc("/", frontpageHandler)
 	// http.HandleFunc("/index/", makeHandler(index))
+	// http.HandleFunc("/", makeHandler(indexHandler))
 	http.HandleFunc("/create/", makeHandler(creationHandler))
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 
-	log.Fatal(http.ListenAndServe(":8080", http.FileServer(http.Dir("/Users/saxon/vscode/web_app_personal/tmpl"))))
+	log.Fatal(http.ListenAndServe(":8080", nil)) //http.FileServer(http.Dir("/Users/saxon/vscode/web_app_personal/"))))
 }

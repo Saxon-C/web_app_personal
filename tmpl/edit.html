@@ -3,14 +3,14 @@
 <head>
     <title>Editing {{.Title}}</title>
 </head>
-<body>
+<!-- <body> -->
     <h1>Editing {{.Title}}</h1>
 
-    <form action="/save/{{.Title}}" method="PUSH">
+    <form action="/save/{{.Title}}" method="POST">
         <div><textarea name="body" rows="5" cols="50">{{printf "%s" .Body}}</textarea></div>
         <div><input type = "Submit" value="Save"></div>
     </form>
-    
-</body>
+
+<!-- </body> -->
 
 </html>
