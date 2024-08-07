@@ -51,7 +51,10 @@ func loadPage(title string) (*Page, error) {
 // redirects to front page if user tries to view nonexistent page
 // doesn't actually redirect right now because of infinite redirect loop
 func frontpageHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/view.html", http.StatusFound)
+	if r.URL.Path != "/" {
+		http.Error(w, "404 not found.", http.StatusNotFound)
+		return
+	}
 }
 
 // 	// search for all pages available
@@ -84,8 +87,6 @@ func creationHandler(w http.ResponseWriter, r *http.Request, title string) {
 	if err != nil {
 		p = &Page{Title: title}
 	}
-	log.Println(w, r, title, "creation handler")
-	log.Println(p, "creation handler")
 	renderTemplate(w, "create", p)
 }
 
@@ -147,16 +148,13 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 }
 
 func main() {
+	http.FileServer(http.Dir("/web_app_personal"))
 
 	http.HandleFunc("/", frontpageHandler)
-	// http.HandleFunc("/index/", makeHandler(index))
-	// http.HandleFunc("/", makeHandler(indexHandler))
 	http.HandleFunc("/create/", makeHandler(creationHandler))
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 
-	// starts path in web_app folder
-	// gets redirected to index.html
-	log.Fatal(http.ListenAndServe(":8080", http.FileServer(http.Dir("/Users/saxon/vscode/web_app_personal"))))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
