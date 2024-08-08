@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 
 <head>
-    <title>Create New Page</title>
+    <title>Create</title>
 </head>
 
 <body>
-    <h1>Create New Page</h1>
+    <h1>Create</h1>
     <!-- NEEDS INPUT FOR .TITLE AND .BODY FROM STRUCT -->
-     <form action="/save/<data>name</data>" method="POST">
+     <form action="/save/{{.Title}}" method="POST">
         <p>Enter Title for new page:</p>
             <div><textarea name="title" rows="3" cols="40"></textarea></div>
         <p>Enter Body text for new page</p>

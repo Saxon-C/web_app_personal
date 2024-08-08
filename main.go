@@ -26,9 +26,13 @@ type Page struct {
 	Body  []byte
 }
 
-// save function
+// func indexServer() {
+
+// }
+
+// save function.
+// grabs filename and data from Page struct, places it into /data/ and adds .txt
 func (p *Page) save() error {
-	// save page title into dataDir
 	filename := filepath.Join(dataDir, p.Title+".txt")
 	// if dataDir DNE then create w/ 0600 permissions
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
@@ -48,6 +52,22 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
+// check if page exists, if it doesn't, render create template
+func pageCheck(title string) (*Page, error) {
+	p, err := loadPage(title)
+	if err != nil {
+		return p, err
+	}
+	return p, err
+
+}
+
+func pageRedirect(w http.ResponseWriter, r *http.Request) {
+	log.Println("problem loading page", http.StatusInternalServerError)
+	http.Redirect(w, r, "/", http.StatusFound)
+	return
+}
+
 // redirects to front page if user tries to view nonexistent page
 // doesn't actually redirect right now because of infinite redirect loop
 func frontpageHandler(w http.ResponseWriter, r *http.Request) {
@@ -63,18 +83,24 @@ func frontpageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // creation handler for new pages
+// this can override an existing page
+// /create/page1 will change title/body of existing page1.txt -- not wanted
 func creationHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
+	p, err := pageCheck(title)
 	if err != nil {
 		p = &Page{Title: title}
+		fmt.Println("creation handler worked")
+		renderTemplate(w, "create", p)
+		return
 	}
-	renderTemplate(w, "create", p)
+	log.Println("creation handler failed, page exists already")
+	pageRedirect(w, r)
+	return
 }
 
 // subdirectory for viewing of pages
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	p, err := loadPage(title)
-	// p, err := loadIndex(title)
 	if err != nil {
 		return
 	}
@@ -100,6 +126,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 		log.Println("error saving page")
 		return
 	}
+	// when a file is saved, this is where it goes.
+	// writes it & redirects user to that new/updated page
 	http.Redirect(w, r, "../data/"+title+".txt", http.StatusFound)
 }
 
@@ -109,7 +137,6 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	// test area
 }
 
 var validPath = regexp.MustCompile("^/(edit|save|view|index|create|test)/([a-zA-Z0-9]+)$")
