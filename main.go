@@ -62,30 +62,6 @@ func frontpageHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "index", p)
 }
 
-// 	// search for all pages available
-// 	files, err := os.ReadDir("/Users/saxon/vscode/web_app_personal/data/")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	for _, file := range files {
-// 		fmt.Println(file.Name())
-// 	}
-
-// 	// search for index template and redirect to that page
-// 	tmpl, err := os.ReadDir("/Users/saxon/vscode/web_app_personal/")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	for _, file := range tmpl {
-// 		fmt.Println(file.Name())
-// 		if file.Name() == "index.html" {
-// 			//endless loop occuring here
-// 			http.Redirect(w, r, "index.html", http.StatusFound)
-// 			return
-// 		}
-// 	}
-// }
-
 // creation handler for new pages
 func creationHandler(w http.ResponseWriter, r *http.Request, title string) {
 	p, err := loadPage(title)
@@ -124,7 +100,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 		log.Println("error saving page")
 		return
 	}
-	http.Redirect(w, r, "/data/"+title, http.StatusFound)
+	http.Redirect(w, r, "../data/"+title+".txt", http.StatusFound)
 }
 
 // calls the correct template based on URL
@@ -133,6 +109,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	// test area
 }
 
 var validPath = regexp.MustCompile("^/(edit|save|view|index|create|test)/([a-zA-Z0-9]+)$")
@@ -147,15 +124,11 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 			return
 		}
 		fn(w, r, m[2])
-
-		log.Println(m[:])
 	}
 }
 
 func main() {
-	http.FileServer(http.Dir("/web_app_personal"))
-
-	http.HandleFunc("/", frontpageHandler)
+	http.Handle("/", http.FileServer(http.Dir(".")))
 	http.HandleFunc("/create/", makeHandler(creationHandler))
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
