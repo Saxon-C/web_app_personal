@@ -7,9 +7,12 @@
 <body>
     <h1>Create</h1>
     <!-- NEEDS INPUT FOR .TITLE AND .BODY FROM STRUCT -->
-     <form action="/save/{{.Title}}" method="POST">
+     <form action="/save/{{.Title}}" method="get">
         <p>Enter Title for new page:</p>
-            <div><textarea name="title" rows="3" cols="40"></textarea></div>
+            <input type = "text" id = "name" name = "name"/>
+       
+
+            <!-- <div><textarea name="title" rows="3" cols="40"></textarea></div> -->
         <p>Enter Body text for new page</p>
             <div><textarea name="body" rows="3" cols="40"></textarea></div>
             <div><input type = "submit" value = "Save"></div>
