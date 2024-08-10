@@ -26,14 +26,10 @@ type Page struct {
 	Body  []byte
 }
 
-// func indexServer() {
-
-// }
-
 // save function.
 // grabs filename and data from Page struct, places it into /data/ and adds .txt
 func (p *Page) save() error {
-	filename := filepath.Join(dataDir, p.Title+".txt")
+	filename := filepath.Join(dataDir, p.Title+".html")
 	// if dataDir DNE then create w/ 0600 permissions
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		os.Mkdir(dataDir, 0600)
@@ -43,29 +39,13 @@ func (p *Page) save() error {
 
 // loads pages from data dir
 func loadPage(title string) (*Page, error) {
-	filename := filepath.Join(dataDir, title+".txt")
+	filename := filepath.Join(dataDir, title+".html")
 	body, err := os.ReadFile(filepath.Clean(filename))
 	if err != nil {
 		log.Printf("error loading page %q: %s", filename, err)
 		return nil, err
 	}
 	return &Page{Title: title, Body: body}, nil
-}
-
-// // check if page exists, if it doesn't, render create template
-// func pageCheck(title string) (*Page, error) {
-// 	p, err := loadPage(title)
-// 	if err != nil {
-// 		return p, err
-// 	}
-// 	return p, err
-
-// }
-
-// func pageRedirect(w http.ResponseWriter, r *http.Request) {
-// 	log.Println("problem loading page", http.StatusInternalServerError)
-// 	http.Redirect(w, r, "/", http.StatusFound)
-// 	return
 }
 
 // // redirects to front page if user tries to view nonexistent page
@@ -86,7 +66,7 @@ func loadPage(title string) (*Page, error) {
 // this can override an existing page
 // /create/page1 will change title/body of existing page1.txt -- not wanted
 func creationHandler(w http.ResponseWriter, r *http.Request) {
-	p := &Page{Title: "non"}
+	p := &Page{Title: ""}
 	fmt.Println("creation handler worked")
 	renderTemplate(w, "create", p)
 }
@@ -112,6 +92,7 @@ func editHandler(w http.ResponseWriter, r *http.Request, title string) {
 // allows for saving input of a page when editing
 func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	body := r.FormValue("body")
+	title = r.FormValue("title")
 	p := &Page{Title: title, Body: []byte(body)}
 	err := p.save()
 	if err != nil {
@@ -121,7 +102,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	}
 	// when a file is saved, this is where it goes.
 	// writes it & redirects user to that new/updated page
-	http.Redirect(w, r, "../data/"+title+".txt", http.StatusFound)
+	http.Redirect(w, r, "../data/"+title+".html", http.StatusFound)
 }
 
 // calls the correct template based on URL
