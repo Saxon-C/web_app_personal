@@ -62,30 +62,24 @@ func loadPage(title string) (*Page, error) {
 // 	renderTemplate(w, "index", p)
 // }
 
-// creation handler for new pages
-// this can override an existing page
-// /create/page1 will change title/body of existing page1.txt -- not wanted
+// creates new pages.
 func creationHandler(w http.ResponseWriter, r *http.Request) {
-	p := &Page{Title: ""}
+	p := &Page{Title: "create"}
 	fmt.Println("creation handler worked")
 	renderTemplate(w, "create", p)
 }
 
 // subdirectory for viewing of pages
-func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
-	if err != nil {
-		return
-	}
+func viewHandler(w http.ResponseWriter, r *http.Request) {
+	p := &Page{Title: "view"}
+	fmt.Println("view handler worked")
 	renderTemplate(w, "view", p)
 }
 
 // allows for editing of a page, not creation
-func editHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
-	if err != nil {
-		p = &Page{Title: title}
-	}
+func editHandler(w http.ResponseWriter, r *http.Request) {
+	p := &Page{Title: "edit"}
+	fmt.Println("edit handler worked")
 	renderTemplate(w, "edit", p)
 }
 
@@ -131,8 +125,8 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 func main() {
 	http.Handle("/", http.FileServer(http.Dir(".")))
 	http.HandleFunc("/create/", (creationHandler))
-	http.HandleFunc("/view/", makeHandler(viewHandler))
-	http.HandleFunc("/edit/", makeHandler(editHandler))
+	http.HandleFunc("/view/", (viewHandler))
+	http.HandleFunc("/edit/", (editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
