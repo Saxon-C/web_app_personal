@@ -4,14 +4,14 @@
     <title>Page Editor</title>
 </head>
 <body>
-    <h1>Page Editor</h1>
+    <h1>Page Editor</h1> <a href="../index.html">Home</a>
 
     <form action="/save/{{.Title}}" method="post">
         <p>Enter name of page to edit:</p>
-        <div><textarea name="title" rows="3" cols="40"></textarea></div>
+        <div><textarea name="newpage_name" rows="1" cols="20"></textarea></div>
         
         <p>Enter new body for page</p>
-        <div><textarea name="body" rows="5" cols="50"></textarea></div>
+        <div><textarea name="newpage_body" rows="3" cols="40"></textarea></div>
         <div><input type = "Submit" value="Save"></div><br>
     </form>
 

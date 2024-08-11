@@ -1,7 +1,13 @@
--Make it so if a page doesn't exist, you can't just create one from "edit".
+In Order:
+    Get create/edit/view to work completely.
+    Create default tmpl so each page has a default look instead of just the text and body.
+        -(ex: home page link)
+    Login screen
+        (hashing, encryption/decryption, mysql)
+
+
 -Prevent overwriting of existing page when creating.
 -Prevent creating of new page when editing.
 -Create file listing when viewing.
--Create a "home" button for each page.
 -Login screen w/ HTML <input> tag --> save info into mysql DB.
 -Make nicer looking with CSS.

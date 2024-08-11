@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 const dataDir string = "data"
@@ -18,7 +19,7 @@ var templates = template.Must(template.ParseFiles(
 	filepath.Join(tmplDir, "edit.html"),
 	filepath.Join(tmplDir, "view.html"),
 	filepath.Join(tmplDir, "create.html"),
-	// filepath.Join(tmplDir, "index.html"),
+	filepath.Join(tmplDir, "default.html"),
 ))
 
 type Page struct {
@@ -48,18 +49,29 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
-// // redirects to front page if user tries to view nonexistent page
-// // doesn't actually redirect right now because of infinite redirect loop
-// func frontpageHandler(w http.ResponseWriter, r *http.Request) {
-// 	if r.URL.Path != "/" {
-// 		http.Error(w, "404 not found.", http.StatusNotFound)
-// 		return
-// 	}
-// 	p, err := loadPage("index")
-// 	if err != nil {
-// 		p = &Page{Title: "index"}
-// 	}
-// 	renderTemplate(w, "index", p)
+// checks to see if a file exists or not before creating or editing
+func doesExist(pagename string) bool {
+	pagename = filepath.Join(dataDir, pagename+".html")
+	if _, err := os.Stat(pagename); err == nil {
+		log.Println("page already exists, returning true")
+		return true
+	}
+	log.Println("page does not exist, continuing creation")
+	return false
+}
+
+func canEdit(pagename string) bool {
+	if doesExist(pagename) == true {
+		return true
+	}
+	return false
+}
+
+// to get /view/ to list the pages in /data/ automatically:
+// set links with vars in view that get filled by a for loop here
+// loops through /data/ dir, matches each file with a link in /view/
+// func viewPageIndex() {
+
 // }
 
 // creates new pages.
@@ -85,8 +97,27 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 
 // allows for saving input of a page when editing
 func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
-	body := r.FormValue("body")
-	title = r.FormValue("title")
+	title = strings.TrimSpace(r.FormValue("newpage_name"))
+	body := r.FormValue("newpage_body")
+	// input is saved with create or edit
+	// if create: checks if the page exists. if exists and tmpl == create, don't create. if not, create.
+	if doesExist(title) == true {
+		if checkTemplate(r) == "create" {
+			log.Println("page creation failed. page exists already.")
+			http.Redirect(w, r, "/error/create_error.html", http.StatusFound)
+			return
+		}
+	}
+	// if edit: checks if page exists. if does not exist and tmpl == edit, don't edit.
+	// if page doesn't exist, don't create
+	// if page exists, and tmpl == edit, then edit.
+	if doesExist(title) == false {
+		if checkTemplate(r) == "edit" {
+			log.Println("page edit failed. cannot edit a page that doesn't exist.")
+			http.Redirect(w, r, "/error/edit_error.html", http.StatusFound)
+			return
+		}
+	}
 	p := &Page{Title: title, Body: []byte(body)}
 	err := p.save()
 	if err != nil {
@@ -107,7 +138,20 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	}
 }
 
-var validPath = regexp.MustCompile("^/(edit|save|view|index|create|test)/([a-zA-Z0-9]+)$")
+var validPath = regexp.MustCompile("^/(edit|save|view|create|data)/([a-zA-Z0-9]+)$")
+
+func checkTemplate(r *http.Request) string {
+	m := validPath.FindStringSubmatch(r.URL.Path)
+	if m[2] == "create" {
+		log.Println(m[:], "create line")
+		return "create"
+	}
+	if m[2] == "edit" {
+		log.Println(m[:], "edit line")
+		return "edit"
+	}
+	return "view"
+}
 
 // makes and runs the handler (view, edit, save, etc.), checks to see if the path is valid
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {

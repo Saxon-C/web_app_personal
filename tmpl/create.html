@@ -5,14 +5,14 @@
 </head>
 
 <body>
-    <h1>Create</h1>
+    <h1>Create</h1> <a href="../index.html">Home</a>
     <!-- NEEDS INPUT FOR .TITLE AND .BODY FROM STRUCT -->
      <form action="/save/{{.Title}}" method="post">
         <p>Enter Title for new page:</p>
-            <div><textarea name="title" rows="3" cols="40"></textarea></div>
+            <div><textarea name="newpage_name" rows="1" cols="20"></textarea></div>
             
         <p>Enter Body text for new page</p>
-            <div><textarea name="body" rows="3" cols="40"></textarea></div>
+            <div><textarea name="newpage_body" rows="3" cols="40"></textarea></div>
             
             <div><input type = "submit" value = "Save"></div>
     </form>
