@@ -14,7 +14,7 @@ import (
 const dataDir string = "data"
 const tmplDir string = "tmpl"
 
-var validPath = regexp.MustCompile("^/(edit|save|view|create|login)/([a-zA-Z0-9]+)$")
+var validPath = regexp.MustCompile("^/(edit|save|view|create|login|signup)/([a-zA-Z0-9]+)$")
 
 // list of templates
 var templates = template.Must(template.ParseFiles(
@@ -23,6 +23,7 @@ var templates = template.Must(template.ParseFiles(
 	filepath.Join(tmplDir, "create.html"),
 	filepath.Join(tmplDir, "default.html"),
 	filepath.Join(tmplDir, "login.html"),
+	filepath.Join(tmplDir, "signup.html"),
 ))
 
 type Page struct {
@@ -68,10 +69,81 @@ func doesExist(pagename string) bool {
 	return false
 }
 
+//
+
+// handle the user login
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	p := &Page{Title: "login"}
 	fmt.Println("login handler worked")
 	renderTemplate(w, "login", p)
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+	uName, pw := "", ""
+
+	r.ParseForm()
+	uName = r.FormValue("username")
+	pw = r.FormValue("password")
+
+	uNameCheck := IsEmpty(uName)
+	pwCheck := IsEmpty(pw)
+
+	if uNameCheck || pwCheck {
+		log.Println(w, "Error, there is an empty input")
+		return
+	}
+	// user and pass for database
+	dbUser := "root"
+	dbPass := "root"
+
+	if dbPass == "root" && dbUser == "root" {
+		log.Println(w, "Login successful")
+	} else {
+		log.Println(w, "Login failed")
+	}
+
+}
+
+// reference database to check credentials
+// func checkCreds(username string, password string) string{
+
+// }
+
+func IsEmpty(data string) bool {
+	if len(data) == 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+// handle the creation of new account un/pw pairs.
+// when signup page is created, uncomment pwconfirm
+func signup(w http.ResponseWriter, r *http.Request) {
+	uName, pw, pwConfirm := "", "", ""
+	r.ParseForm()
+	// username from the form
+	uName = r.FormValue("username")
+	// password from the form
+	pw = r.FormValue("password")
+	// confirm password, must be same as first password
+	pwConfirm = r.FormValue("passwordConfirm")
+
+	// empty checking
+	uNameCheck := IsEmpty(uName)
+	pwCheck := IsEmpty(pw)
+	pwConfirmCheck := IsEmpty(pwConfirm)
+
+	if uNameCheck || pwCheck || pwConfirmCheck {
+		log.Println(w, "Empty data in an input")
+		return
+	}
+	if pw == pwConfirm {
+		log.Println(w, "Registration Successful")
+	} else {
+		log.Println(w, "Passwords must be the same")
+	}
+
 }
 
 // creates new pages.
