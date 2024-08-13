@@ -14,17 +14,25 @@ import (
 const dataDir string = "data"
 const tmplDir string = "tmpl"
 
+var validPath = regexp.MustCompile("^/(edit|save|view|create|login)/([a-zA-Z0-9]+)$")
+
 // list of templates
 var templates = template.Must(template.ParseFiles(
 	filepath.Join(tmplDir, "edit.html"),
 	filepath.Join(tmplDir, "view.html"),
 	filepath.Join(tmplDir, "create.html"),
 	filepath.Join(tmplDir, "default.html"),
+	filepath.Join(tmplDir, "login.html"),
 ))
 
 type Page struct {
 	Title string
 	Body  []byte
+}
+
+type Credentials struct {
+	Username string
+	Password string
 }
 
 // save function.
@@ -43,7 +51,7 @@ func loadPage(title string) (*Page, error) {
 	filename := filepath.Join(dataDir, title+".html")
 	body, err := os.ReadFile(filepath.Clean(filename))
 	if err != nil {
-		log.Printf("error loading page %q: %s", filename, err)
+		// log.Printf("error loading page %q: %s", filename, err)
 		return nil, err
 	}
 	return &Page{Title: title, Body: body}, nil
@@ -53,26 +61,18 @@ func loadPage(title string) (*Page, error) {
 func doesExist(pagename string) bool {
 	pagename = filepath.Join(dataDir, pagename+".html")
 	if _, err := os.Stat(pagename); err == nil {
-		log.Println("page already exists, returning true")
+		// log.Println("page already exists, returning true")
 		return true
 	}
-	log.Println("page does not exist, continuing creation")
+	// log.Println("page does not exist, continuing creation")
 	return false
 }
 
-func canEdit(pagename string) bool {
-	if doesExist(pagename) == true {
-		return true
-	}
-	return false
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	p := &Page{Title: "login"}
+	fmt.Println("login handler worked")
+	renderTemplate(w, "login", p)
 }
-
-// to get /view/ to list the pages in /data/ automatically:
-// set links with vars in view that get filled by a for loop here
-// loops through /data/ dir, matches each file with a link in /view/
-// func viewPageIndex() {
-
-// }
 
 // creates new pages.
 func creationHandler(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +103,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	// if create: checks if the page exists. if exists and tmpl == create, don't create. if not, create.
 	if doesExist(title) == true {
 		if checkTemplate(r) == "create" {
-			log.Println("page creation failed. page exists already.")
+			// log.Println("page creation failed. page exists already.")
 			http.Redirect(w, r, "/error/create_error.html", http.StatusFound)
 			return
 		}
@@ -113,7 +113,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	// if page exists, and tmpl == edit, then edit.
 	if doesExist(title) == false {
 		if checkTemplate(r) == "edit" {
-			log.Println("page edit failed. cannot edit a page that doesn't exist.")
+			// log.Println("page edit failed. cannot edit a page that doesn't exist.")
 			http.Redirect(w, r, "/error/edit_error.html", http.StatusFound)
 			return
 		}
@@ -122,7 +122,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	err := p.save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println("error saving page")
+		// log.Println("error saving page")
 		return
 	}
 	// when a file is saved, this is where it goes.
@@ -138,16 +138,14 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	}
 }
 
-var validPath = regexp.MustCompile("^/(edit|save|view|create|data)/([a-zA-Z0-9]+)$")
-
 func checkTemplate(r *http.Request) string {
 	m := validPath.FindStringSubmatch(r.URL.Path)
 	if m[2] == "create" {
-		log.Println(m[:], "create line")
+		// log.Println(m[:], "create line")
 		return "create"
 	}
 	if m[2] == "edit" {
-		log.Println(m[:], "edit line")
+		// log.Println(m[:], "edit line")
 		return "edit"
 	}
 	return "view"
@@ -171,6 +169,7 @@ func main() {
 	http.HandleFunc("/create/", (creationHandler))
 	http.HandleFunc("/view/", (viewHandler))
 	http.HandleFunc("/edit/", (editHandler))
+	http.HandleFunc("/login/", (loginHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
