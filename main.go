@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/sha256"
+	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"log"
@@ -9,6 +12,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 const dataDir string = "data"
@@ -96,18 +101,13 @@ func login(w http.ResponseWriter, r *http.Request) {
 	dbUser := "root"
 	dbPass := "root"
 
-	if dbPass == "root" && dbUser == "root" {
+	if dbUser == "root" && dbPass == "root" {
 		log.Println(w, "Login successful")
 	} else {
 		log.Println(w, "Login failed")
 	}
 
 }
-
-// reference database to check credentials
-// func checkCreds(username string, password string) string{
-
-// }
 
 func IsEmpty(data string) bool {
 	if len(data) == 0 {
@@ -117,9 +117,58 @@ func IsEmpty(data string) bool {
 	}
 }
 
-// handle the creation of new account un/pw pairs.
-// when signup page is created, uncomment pwconfirm
-func signup(w http.ResponseWriter, r *http.Request) {
+func pwHash(password string) (hash string) {
+	// creates new hash object
+	hasher := sha256.New()
+	// converts the password data into a byte slice, writes it to the hasher object
+	hasher.Write([]byte(password))
+
+	// computes the hash, returning it as a byte slice into hashBytes
+	hashBytes := hasher.Sum(nil)
+	// converts the bytes into a hexidecimal string
+	hash = hex.EncodeToString(hashBytes)
+
+	log.Println(hash)
+	return hash
+
+}
+
+// checks login info against the database info
+func credentialsCheck(db *sql.DB, username, pwHash string) bool {
+	var dbHash string
+
+	// sql query. selects the password column from users table where the name == username
+	err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&dbHash)
+	// if err successfully queries
+	if err != nil {
+		// username not found within rows
+		if err == sql.ErrNoRows {
+			// Username not found
+			return false
+		}
+	}
+	return dbHash == pwHash
+
+}
+
+// connect to database
+func dbConnect() {
+	// data source name (dsn). connection info for db. name:password@protocol(ip/port)/dbname
+	dsn := "root:root@tcp(127.0.0.1:3306)/creds"
+
+	// opens "creds" db with the dsn credentials
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// pings the database to make sure it's online, if not, connects again
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// checks the data submitted into the HTML login forum
+func formCheck(w http.ResponseWriter, r *http.Request) bool {
 	uName, pw, pwConfirm := "", "", ""
 	r.ParseForm()
 	// username from the form
@@ -129,20 +178,40 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	// confirm password, must be same as first password
 	pwConfirm = r.FormValue("passwordConfirm")
 
-	// empty checking
+	// empty checking, return bool
 	uNameCheck := IsEmpty(uName)
 	pwCheck := IsEmpty(pw)
 	pwConfirmCheck := IsEmpty(pwConfirm)
 
-	if uNameCheck || pwCheck || pwConfirmCheck {
+	// checks to see if any bool check is true (empty)
+	if uNameCheck || pwCheck || pwConfirmCheck == true {
 		log.Println(w, "Empty data in an input")
-		return
+		return false
 	}
+	// checks if pw is the same as pwConfirm or not.
 	if pw == pwConfirm {
-		log.Println(w, "Registration Successful")
+		log.Println(w, "Passwords are the same.")
 	} else {
 		log.Println(w, "Passwords must be the same")
+		return false
 	}
+
+	return true
+}
+
+// handle the creation of new account un/pw pairs.
+// when signup page is created, uncomment pwconfirm
+func signup(w http.ResponseWriter, r *http.Request) {
+	if formCheck(w, r) == false {
+		log.Println("form check FAILED")
+		return
+	}
+	dsn := "root:root@tcp(127.0.0.1:3306)/creds"
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return
+	}
+	defer db.Close()
 
 }
 
@@ -237,6 +306,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 }
 
 func main() {
+	dbConnect()
 	http.Handle("/", http.FileServer(http.Dir(".")))
 	http.HandleFunc("/create/", (creationHandler))
 	http.HandleFunc("/view/", (viewHandler))
