@@ -74,24 +74,6 @@ func doesExist(pagename string) bool {
 	return false
 }
 
-// handle the user login
-func loginHandler(w http.ResponseWriter, r *http.Request) {
-	p := &Page{Title: "login"}
-	// fmt.Println("login handler worked")
-	renderTemplate(w, "login", p)
-}
-
-// func login(w http.ResponseWriter, r *http.Request) {
-// 	if !formCheck(w, r) {
-// 		log.Println("form check FAILED in login")
-// 		return
-// 	}
-// 	username := r.FormValue("username")
-// 	pwHash := pwHash(r.FormValue("password"))
-// 	credentialsCheck(&sql.DB{}, username, pwHash)
-
-// }
-
 func IsEmpty(data string) bool {
 	if len(data) == 0 {
 		return true
@@ -114,25 +96,6 @@ func pwHash(password string) (hash string) {
 
 }
 
-// checks login info against the database info
-// func credentialsCheck(db *sql.DB, username, pwHash string) bool {
-// 	var dbHash string
-
-// 	// sql query. selects the password column from users table where the name == username
-// 	err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&dbHash)
-// 	log.Println(err, "db query row")
-// 	// if err successfully queries
-// 	if err != nil {
-// 		// username not found within rows
-// 		if err == sql.ErrNoRows {
-// 			// Username not found
-// 			return false
-// 		}
-// 	}
-// 	return dbHash == pwHash
-
-// }
-
 // connect to database
 func dbConnect() {
 	// data source name (dsn). connection info for db. name:password@protocol(ip/port)/dbname
@@ -150,44 +113,77 @@ func dbConnect() {
 	}
 }
 
+// checks login info against the database info
+func credentialsCheck(db *sql.DB, username, pwHash string) bool {
+	var dbHash string
+
+	// sql query. selects the password column from users table where the name == username
+	err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&dbHash)
+	// if err successfully queries
+	if err != nil {
+		// username not found within rows
+		if err == sql.ErrNoRows {
+			// Username not found
+			return false
+		}
+	}
+	return dbHash == pwHash
+
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+	// log.Println("inside login func")
+	if !loginFormCheck(w, r) {
+		// log.Println("form check FAILED in login")
+		return
+	}
+	// log.Println("finished login func")
+
+}
+
 // checks the data submitted into the HTML login forum
-func formCheck(w http.ResponseWriter, r *http.Request) bool {
+func loginFormCheck(w http.ResponseWriter, r *http.Request) bool {
 	// log.Println("form check started")
-	uName, pw, pwConfirm := "", "", ""
+	uName, pw := "", ""
 	r.ParseForm()
-	// username from the form
+
 	uName = r.FormValue("username")
-	// password from the form
 	pw = r.FormValue("password")
-	// confirm password, must be same as first password
-	pwConfirm = r.FormValue("passwordConfirm")
 
 	// empty checking, return bool
 	uNameCheck := IsEmpty(uName)
 	pwCheck := IsEmpty(pw)
-	pwConfirmCheck := IsEmpty(pwConfirm)
 
 	// checks to see if any bool check is true (empty)
-	if uNameCheck || pwCheck || pwConfirmCheck {
+	if uNameCheck || pwCheck {
 		log.Println(w, "Empty data in an input")
 		return false
 	}
-	// checks if pw is the same as pwConfirm or not.
-	if pw == pwConfirm {
-		// log.Println(w, "Passwords are the same.")
-	} else {
-		// log.Println(w, "Passwords must be the same")
+
+	pwHash := pwHash(pw)
+
+	dsn := "root:root@tcp(127.0.0.1:3306)/creds"
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		// log.Println("failed to start db server")
+		http.Error(w, "error opening db in loginformcheck", http.StatusInternalServerError)
+	}
+	log.Println("started db server")
+	// closes db once singup is complete
+	defer db.Close()
+
+	if !credentialsCheck(db, uName, pwHash) {
+		log.Println("login form, credentialcheck FAILED")
 		return false
 	}
 	// log.Println("form check ran successfully")
 	return true
 }
 
-// handle the creation of new account un/pw pairs.
-// when signup page is created, uncomment pwconfirm
+// checks the data submitted into the HTML login forum
 func signup(w http.ResponseWriter, r *http.Request) {
 	// checks if credentials in forum are acceptable
-	if !formCheck(w, r) {
+	if !signupFormCheck(w, r) {
 		// log.Println("form check FAILED in signup")
 		return
 	}
@@ -221,16 +217,63 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func signupHandler(w http.ResponseWriter, r *http.Request) {
-	p := &Page{Title: "signup"}
-	// fmt.Println("signup handler worked")
-	renderTemplate(w, "signup", p)
+func signupFormCheck(w http.ResponseWriter, r *http.Request) bool {
+	// log.Println("form check started")
+	uName, pw, pwConfirm := "", "", ""
+	r.ParseForm()
+	// username from the form
+	uName = r.FormValue("username")
+	// password from the form
+	pw = r.FormValue("password")
+	// confirm password, must be same as first password
+	pwConfirm = r.FormValue("passwordConfirm")
+
+	// empty checking, return bool
+	uNameCheck := IsEmpty(uName)
+	pwCheck := IsEmpty(pw)
+	pwConfirmCheck := IsEmpty(pwConfirm)
+
+	// checks to see if any bool check is true (empty)
+	if uNameCheck || pwCheck || pwConfirmCheck {
+		log.Println(w, "Empty data in an input")
+		return false
+	}
+	// checks if pw is the same as pwConfirm or not.
+	if pw == pwConfirm {
+		// log.Println(w, "Passwords are the same.")
+	} else {
+		// log.Println(w, "Passwords must be the same")
+		return false
+	}
+	// log.Println("form check ran successfully")
+	return true
+}
+
+func loginFormHandler(w http.ResponseWriter, r *http.Request) {
+	login(w, r)
+	// log.Println("finished loginformhandler")
+	// when there is place to go after logging in, replace /login/
+	http.Redirect(w, r, "/login/", http.StatusFound)
+
 }
 
 func acctCreateHandler(w http.ResponseWriter, r *http.Request) {
 	signup(w, r)
 	// log.Println("finished acct handler")
 	http.Redirect(w, r, "/login/", http.StatusFound)
+}
+
+func signupHandler(w http.ResponseWriter, r *http.Request) {
+	p := &Page{Title: "signup"}
+	// fmt.Println("signup handler worked")
+	renderTemplate(w, "signup", p)
+}
+
+// handle the user login
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	p := &Page{Title: "login"}
+	// fmt.Println("login handler worked")
+	renderTemplate(w, "login", p)
 }
 
 // creates new pages.
@@ -329,8 +372,9 @@ func main() {
 	http.HandleFunc("/create/", (creationHandler))
 	http.HandleFunc("/view/", (viewHandler))
 	http.HandleFunc("/edit/", (editHandler))
-	http.HandleFunc("/signup/", (signupHandler))
 	http.HandleFunc("/login/", (loginHandler))
+	http.HandleFunc("/loginredirect/", (loginFormHandler))
+	http.HandleFunc("/signup/", (signupHandler))
 	http.HandleFunc("/acctcreate/", (acctCreateHandler))
 	http.HandleFunc("/save/", (saveHandler))
 
