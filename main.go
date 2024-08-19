@@ -19,7 +19,7 @@ import (
 const dataDir string = "data"
 const tmplDir string = "tmpl"
 
-var validPath = regexp.MustCompile("^/(edit|save|view|create|login|signup)/([a-zA-Z0-9]+)$")
+var validPath = regexp.MustCompile("^/(edit|save|view|create|login|signup|acctcreate)/([a-zA-Z0-9]+)$")
 
 // list of templates
 var templates = template.Must(template.ParseFiles(
@@ -53,15 +53,15 @@ func (p *Page) save() error {
 }
 
 // loads pages from data dir
-func loadPage(title string) (*Page, error) {
-	filename := filepath.Join(dataDir, title+".html")
-	body, err := os.ReadFile(filepath.Clean(filename))
-	if err != nil {
-		// log.Printf("error loading page %q: %s", filename, err)
-		return nil, err
-	}
-	return &Page{Title: title, Body: body}, nil
-}
+// func loadPage(title string) (*Page, error) {
+// 	filename := filepath.Join(dataDir, title+".html")
+// 	body, err := os.ReadFile(filepath.Clean(filename))
+// 	if err != nil {
+// 		// log.Printf("error loading page %q: %s", filename, err)
+// 		return nil, err
+// 	}
+// 	return &Page{Title: title, Body: body}, nil
+// }
 
 // checks to see if a file exists or not before creating or editing
 func doesExist(pagename string) bool {
@@ -74,40 +74,23 @@ func doesExist(pagename string) bool {
 	return false
 }
 
-//
-
 // handle the user login
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	p := &Page{Title: "login"}
-	fmt.Println("login handler worked")
+	// fmt.Println("login handler worked")
 	renderTemplate(w, "login", p)
 }
 
-func login(w http.ResponseWriter, r *http.Request) {
-	uName, pw := "", ""
+// func login(w http.ResponseWriter, r *http.Request) {
+// 	if !formCheck(w, r) {
+// 		log.Println("form check FAILED in login")
+// 		return
+// 	}
+// 	username := r.FormValue("username")
+// 	pwHash := pwHash(r.FormValue("password"))
+// 	credentialsCheck(&sql.DB{}, username, pwHash)
 
-	r.ParseForm()
-	uName = r.FormValue("username")
-	pw = r.FormValue("password")
-
-	uNameCheck := IsEmpty(uName)
-	pwCheck := IsEmpty(pw)
-
-	if uNameCheck || pwCheck {
-		log.Println(w, "Error, there is an empty input")
-		return
-	}
-	// user and pass for database
-	dbUser := "root"
-	dbPass := "root"
-
-	if dbUser == "root" && dbPass == "root" {
-		log.Println(w, "Login successful")
-	} else {
-		log.Println(w, "Login failed")
-	}
-
-}
+// }
 
 func IsEmpty(data string) bool {
 	if len(data) == 0 {
@@ -127,29 +110,28 @@ func pwHash(password string) (hash string) {
 	hashBytes := hasher.Sum(nil)
 	// converts the bytes into a hexidecimal string
 	hash = hex.EncodeToString(hashBytes)
-
-	log.Println(hash)
 	return hash
 
 }
 
 // checks login info against the database info
-func credentialsCheck(db *sql.DB, username, pwHash string) bool {
-	var dbHash string
+// func credentialsCheck(db *sql.DB, username, pwHash string) bool {
+// 	var dbHash string
 
-	// sql query. selects the password column from users table where the name == username
-	err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&dbHash)
-	// if err successfully queries
-	if err != nil {
-		// username not found within rows
-		if err == sql.ErrNoRows {
-			// Username not found
-			return false
-		}
-	}
-	return dbHash == pwHash
+// 	// sql query. selects the password column from users table where the name == username
+// 	err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&dbHash)
+// 	log.Println(err, "db query row")
+// 	// if err successfully queries
+// 	if err != nil {
+// 		// username not found within rows
+// 		if err == sql.ErrNoRows {
+// 			// Username not found
+// 			return false
+// 		}
+// 	}
+// 	return dbHash == pwHash
 
-}
+// }
 
 // connect to database
 func dbConnect() {
@@ -159,6 +141,7 @@ func dbConnect() {
 	// opens "creds" db with the dsn credentials
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
+		// log.Println("didn't work")
 		log.Fatal(err)
 	}
 	// pings the database to make sure it's online, if not, connects again
@@ -169,6 +152,7 @@ func dbConnect() {
 
 // checks the data submitted into the HTML login forum
 func formCheck(w http.ResponseWriter, r *http.Request) bool {
+	// log.Println("form check started")
 	uName, pw, pwConfirm := "", "", ""
 	r.ParseForm()
 	// username from the form
@@ -184,41 +168,75 @@ func formCheck(w http.ResponseWriter, r *http.Request) bool {
 	pwConfirmCheck := IsEmpty(pwConfirm)
 
 	// checks to see if any bool check is true (empty)
-	if uNameCheck || pwCheck || pwConfirmCheck == true {
+	if uNameCheck || pwCheck || pwConfirmCheck {
 		log.Println(w, "Empty data in an input")
 		return false
 	}
 	// checks if pw is the same as pwConfirm or not.
 	if pw == pwConfirm {
-		log.Println(w, "Passwords are the same.")
+		// log.Println(w, "Passwords are the same.")
 	} else {
-		log.Println(w, "Passwords must be the same")
+		// log.Println(w, "Passwords must be the same")
 		return false
 	}
-
+	// log.Println("form check ran successfully")
 	return true
 }
 
 // handle the creation of new account un/pw pairs.
 // when signup page is created, uncomment pwconfirm
 func signup(w http.ResponseWriter, r *http.Request) {
-	if formCheck(w, r) == false {
-		log.Println("form check FAILED")
+	// checks if credentials in forum are acceptable
+	if !formCheck(w, r) {
+		// log.Println("form check FAILED in signup")
 		return
 	}
+	// starts up the db
 	dsn := "root:root@tcp(127.0.0.1:3306)/creds"
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
+		// log.Println("failed to start db server")
 		return
 	}
+	log.Println("started db server")
+	// closes db once singup is complete
 	defer db.Close()
 
+	// takes acceptable values from forum and inserts them into the db
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+	pwHash := pwHash(password)
+
+	// userCheck := db.QueryRow("SELECT username FROM users WHERE username = ?", username)
+	// if userCheck != nil {
+	// 	// log.Println("username already exists")
+	// 	http.Error(w, "Username already taken.", http.StatusInternalServerError)
+	// }
+
+	_, err = db.Exec("INSERT INTO users (username, password_hash) VALUE (?, ?)", username, pwHash)
+	if err != nil {
+		// log.Println("failed to insert data")
+		http.Error(w, "Failed to insert data", http.StatusInternalServerError)
+	}
+
+}
+
+func signupHandler(w http.ResponseWriter, r *http.Request) {
+	p := &Page{Title: "signup"}
+	// fmt.Println("signup handler worked")
+	renderTemplate(w, "signup", p)
+}
+
+func acctCreateHandler(w http.ResponseWriter, r *http.Request) {
+	signup(w, r)
+	// log.Println("finished acct handler")
+	http.Redirect(w, r, "/login/", http.StatusFound)
 }
 
 // creates new pages.
 func creationHandler(w http.ResponseWriter, r *http.Request) {
 	p := &Page{Title: "create"}
-	fmt.Println("creation handler worked")
+	// fmt.Println("creation handler worked")
 	renderTemplate(w, "create", p)
 }
 
@@ -237,12 +255,12 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // allows for saving input of a page when editing
-func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
-	title = strings.TrimSpace(r.FormValue("newpage_name"))
+func saveHandler(w http.ResponseWriter, r *http.Request) {
+	title := strings.TrimSpace(r.FormValue("newpage_name"))
 	body := r.FormValue("newpage_body")
 	// input is saved with create or edit
 	// if create: checks if the page exists. if exists and tmpl == create, don't create. if not, create.
-	if doesExist(title) == true {
+	if doesExist(title) {
 		if checkTemplate(r) == "create" {
 			// log.Println("page creation failed. page exists already.")
 			http.Redirect(w, r, "/error/create_error.html", http.StatusFound)
@@ -252,7 +270,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	// if edit: checks if page exists. if does not exist and tmpl == edit, don't edit.
 	// if page doesn't exist, don't create
 	// if page exists, and tmpl == edit, then edit.
-	if doesExist(title) == false {
+	if !doesExist(title) {
 		if checkTemplate(r) == "edit" {
 			// log.Println("page edit failed. cannot edit a page that doesn't exist.")
 			http.Redirect(w, r, "/error/edit_error.html", http.StatusFound)
@@ -293,17 +311,17 @@ func checkTemplate(r *http.Request) string {
 }
 
 // makes and runs the handler (view, edit, save, etc.), checks to see if the path is valid
-func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		m := validPath.FindStringSubmatch(r.URL.Path)
-		if m == nil {
-			http.NotFound(w, r)
-			fmt.Printf("%v", m)
-			return
-		}
-		fn(w, r, m[2])
-	}
-}
+// func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		m := validPath.FindStringSubmatch(r.URL.Path)
+// 		if m == nil {
+// 			http.NotFound(w, r)
+// 			fmt.Printf("%v", m)
+// 			return
+// 		}
+// 		fn(w, r, m[2])
+// 	}
+// }
 
 func main() {
 	dbConnect()
@@ -311,8 +329,10 @@ func main() {
 	http.HandleFunc("/create/", (creationHandler))
 	http.HandleFunc("/view/", (viewHandler))
 	http.HandleFunc("/edit/", (editHandler))
+	http.HandleFunc("/signup/", (signupHandler))
 	http.HandleFunc("/login/", (loginHandler))
-	http.HandleFunc("/save/", makeHandler(saveHandler))
+	http.HandleFunc("/acctcreate/", (acctCreateHandler))
+	http.HandleFunc("/save/", (saveHandler))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
