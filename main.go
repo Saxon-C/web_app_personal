@@ -132,12 +132,10 @@ func credentialsCheck(db *sql.DB, username, pwHash string) bool {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	// log.Println("inside login func")
 	if !loginFormCheck(w, r) {
 		// log.Println("form check FAILED in login")
 		return
 	}
-	// log.Println("finished login func")
 
 }
 

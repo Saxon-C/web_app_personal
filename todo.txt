@@ -2,11 +2,7 @@ In Order:
     Get view to work completely.
     Create default tmpl so each page has a default look instead of just the text and body.
         -(ex: home page link)
-    Login screen
-        (hashing, encryption/decryption, mysql)
-
 
 -Make error pages into template (not priority, just picky)
 -Create file listing when viewing.
--Login screen w/ HTML <input> tag --> save info into mysql DB.
 -Make nicer looking with CSS.
