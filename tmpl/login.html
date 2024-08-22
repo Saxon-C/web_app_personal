@@ -1,47 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name=""viewport" content="width=device-width, initial-scale1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Login</title>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale1.0">
+      <link rel="stylesheet" href="/tmpl/styles.css">
+      <title>Login</title>
 </head>
 
 <body>
-    <a href="../index.html">Home</a>
-    <form action=""></form>
-        <h1>Login</h1>
-            <h3>Enter your login credentials</h3>
-            <form action="/loginredirect/" method="post">
+      <header>
+            <h1>Login</h1>
+            <nav>
+                  <ul>
+                        <li><a href="../index.html/">Home</a></li>
+                        <li><a href="/create/">Create</a></li>
+                        <li><a href="/edit/">Edit</a></li>
+                        <li><a href="/view/">View</a></li>
+                        <li><a href="/login/">Login</a></li>
+                        <li><a href="/data/about.html/">About Me</a></li>
+
+                  </ul>
+            </nav>
+      </header>
+
+      <main>
+            <h2>Login to your account:</h2>
+            <form class="login-form" action="/loginredirect/" method="post">
                   <label for="username">
                         Username:
                   </label>
-                  <input type="text" 
-                         id="username" 
-                         name="username" 
-                         placeholder="Enter your Username" required>
-                        <br>
+                  <input type="text"
+                  id="username" 
+                  name="username" 
+                  class="input-field"
+                  placeholder="Enter your Username" required>
+                  <br>
                   <label for="password">
                         Password:
                   </label>
                   <input type="password"
-                         id="password" 
-                         name="password"
-                         placeholder="Enter your Password" required>
-
+                        id="password"
+                        name="password" 
+                        class="input-field"
+                        placeholder="Enter your Password" required >
+                  
                   <div class="wrap">
-                        <button type="submit"
-                                onclick="solve()">
+                        <button type="submit" onclick="solve()">
                               Submit
                         </button>
                   </div>
             </form>
-            <p>Not registered?
+            
+            <p> Not registered?
                   <a href="/signup/">Create an account</a>
             </p>
-
-    </form>
-
+      </main>
+            
+            
 </body>
 
 </html>

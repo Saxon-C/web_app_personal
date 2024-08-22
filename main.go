@@ -118,7 +118,7 @@ func credentialsCheck(db *sql.DB, username, pwHash string) bool {
 	var dbHash string
 
 	// sql query. selects the password column from users table where the name == username
-	err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&dbHash)
+	err := db.QueryRow("SELECT password_hash FROM users WHERE username = ?", username).Scan(&dbHash)
 	// if err successfully queries
 	if err != nil {
 		// username not found within rows
@@ -159,7 +159,7 @@ func loginFormCheck(w http.ResponseWriter, r *http.Request) bool {
 	}
 
 	pwHash := pwHash(pw)
-
+	log.Println(pwHash, "password hash")
 	dsn := "root:root@tcp(127.0.0.1:3306)/creds"
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {

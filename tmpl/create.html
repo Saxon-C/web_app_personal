@@ -2,25 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name=""viewport" content="width=device-width, initial-scale1.0">
-    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale1.0">
+    <link rel="stylesheet" href="/tmpl/styles.css">
     <title>Create</title>
 </head>
-
 <body>
-    <h1>Create</h1> <a href="../index.html">Home</a>
-    <!-- NEEDS INPUT FOR .TITLE AND .BODY FROM STRUCT -->
-     <form action="/save/{{.Title}}" method="post">
-        <p>Enter Title for new page:</p>
+    <header>
+        <h1>Create</h1> 
+        <nav>
+            <ul>
+                <li><a href="../index.html/">Home</a></li>
+                <li><a href="/create/">Create</a></li>
+                <li><a href="/edit/">Edit</a></li>
+                <li><a href="/view/">View</a></li>
+                <li><a href="/login/">Login</a></li>
+                <li><a href="/data/about.html/">About Me</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <form action="/save/{{.Title}}" method="post">
+            <p>Enter Title for new page:</p>
             <div><textarea name="newpage_name" rows="1" cols="20"></textarea></div>
             
-        <p>Enter Body text for new page</p>
+            <p>Enter Body text for new page</p>
             <div><textarea name="newpage_body" rows="3" cols="40"></textarea></div>
             
             <div><input type = "submit" value = "Save"></div>
-    </form>
-
-
-</body>
-
+        </form>
+    </main>
+        
+    </body>
+    
 </html>
