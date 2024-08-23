@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -26,7 +27,7 @@ var templates = template.Must(template.ParseFiles(
 	filepath.Join(tmplDir, "edit.html"),
 	filepath.Join(tmplDir, "view.html"),
 	filepath.Join(tmplDir, "create.html"),
-	filepath.Join(tmplDir, "default.html"),
+	filepath.Join(tmplDir, "template.html"),
 	filepath.Join(tmplDir, "login.html"),
 	filepath.Join(tmplDir, "signup.html"),
 ))
@@ -44,24 +45,14 @@ type Credentials struct {
 // save function.
 // grabs filename and data from Page struct, places it into /data/ and adds .txt
 func (p *Page) save() error {
-	filename := filepath.Join(dataDir, p.Title+".html")
+	// filename := filepath.Join(dataDir, p.Title+".html")
 	// if dataDir DNE then create w/ 0600 permissions
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		os.Mkdir(dataDir, 0600)
 	}
-	return os.WriteFile(filename, p.Body, 0600)
+	// return os.WriteFile(filename, p.Body, 0600)
+	return createPage(p.Title, string(p.Body))
 }
-
-// loads pages from data dir
-// func loadPage(title string) (*Page, error) {
-// 	filename := filepath.Join(dataDir, title+".html")
-// 	body, err := os.ReadFile(filepath.Clean(filename))
-// 	if err != nil {
-// 		// log.Printf("error loading page %q: %s", filename, err)
-// 		return nil, err
-// 	}
-// 	return &Page{Title: title, Body: body}, nil
-// }
 
 // checks to see if a file exists or not before creating or editing
 func doesExist(pagename string) bool {
@@ -94,6 +85,26 @@ func pwHash(password string) (hash string) {
 	hash = hex.EncodeToString(hashBytes)
 	return hash
 
+}
+
+func scanDirectory(path string) ([]string, error) {
+	var files []string
+
+	// "walks" through the directories searching for files
+	err := filepath.WalkDir(path, func(fp string, info os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		// checks if a directory & file of type .html does not exist, and disregards it
+		if info.IsDir() || filepath.Ext(info.Name()) != ".html" {
+			return nil
+		}
+		relativePath, _ := filepath.Rel(path, fp)
+		files = append(files, relativePath)
+		return nil
+	})
+
+	return files, err
 }
 
 // connect to database
@@ -274,6 +285,30 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login", p)
 }
 
+// attempt at making indexHandler() work within the html file rather than here
+func fileListHandler(w http.ResponseWriter, r *http.Request) {
+	files, err := scanDirectory("./data")
+	if err != nil {
+		http.Error(w, "Unable to list files", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	response := struct {
+		Files []string `json:"files"`
+	}{
+		Files: files,
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Unable to encode JSON", http.StatusInternalServerError)
+	}
+
+	// fmt.Fprintf(w, `{"files": %q}`, files)
+}
+
 // creates new pages.
 func creationHandler(w http.ResponseWriter, r *http.Request) {
 	p := &Page{Title: "create"}
@@ -351,6 +386,26 @@ func checkTemplate(r *http.Request) string {
 	return "view"
 }
 
+func createPage(title, body string) error {
+	// reads tmpl file
+	template, err := os.ReadFile("./tmpl/template.html")
+	if err != nil {
+		return fmt.Errorf("could not read template file: %v", err)
+	}
+
+	templateStr := string(template)
+
+	content := strings.ReplaceAll(templateStr, "{{.Title}}", title)
+	content = strings.ReplaceAll(content, "{{.Body}}", body)
+
+	err = os.WriteFile("./data/"+title+".html", []byte(content), 0644)
+	if err != nil {
+		return fmt.Errorf("could not write HTML file: %v", err)
+	}
+
+	return nil
+}
+
 // makes and runs the handler (view, edit, save, etc.), checks to see if the path is valid
 // func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 // 	return func(w http.ResponseWriter, r *http.Request) {
@@ -367,6 +422,7 @@ func checkTemplate(r *http.Request) string {
 func main() {
 	dbConnect()
 	http.Handle("/", http.FileServer(http.Dir(".")))
+	http.HandleFunc("/files", fileListHandler)
 	http.HandleFunc("/create/", (creationHandler))
 	http.HandleFunc("/view/", (viewHandler))
 	http.HandleFunc("/edit/", (editHandler))

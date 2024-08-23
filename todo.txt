@@ -5,4 +5,3 @@ In Order:
 
 -Make error pages into template (not priority, just picky)
 -Create file listing when viewing.
--Make nicer looking with CSS.
