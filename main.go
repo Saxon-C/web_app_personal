@@ -54,6 +54,24 @@ func (p *Page) save() error {
 	return createPage(p.Title, string(p.Body))
 }
 
+func AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "This is the admin dashboard")
+}
+
+// authenticates the admin login request.
+// takes parameter of "next http.handler" -- "next" is placeholder
+func AdminAuthentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// middleware -- checks for cookie "admin_session" for authentication
+		if _, err := r.Cookie("admin_session"); err != nil {
+			http.Redirect(w, r, "/login/", http.StatusSeeOther)
+			return
+		}
+		// if authentication is successful, it calls the next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 // checks to see if a file exists or not before creating or editing
 func doesExist(pagename string) bool {
 	pagename = filepath.Join(dataDir, pagename+".html")
@@ -124,6 +142,26 @@ func dbConnect() {
 	}
 }
 
+func createPage(title, body string) error {
+	// reads tmpl file
+	template, err := os.ReadFile("./tmpl/template.html")
+	if err != nil {
+		return fmt.Errorf("could not read template file: %v", err)
+	}
+
+	templateStr := string(template)
+
+	content := strings.ReplaceAll(templateStr, "{{.Title}}", title)
+	content = strings.ReplaceAll(content, "{{.Body}}", body)
+
+	err = os.WriteFile("./data/"+title+".html", []byte(content), 0644)
+	if err != nil {
+		return fmt.Errorf("could not write HTML file: %v", err)
+	}
+
+	return nil
+}
+
 // checks login info against the database info
 func credentialsCheck(db *sql.DB, username, pwHash string) bool {
 	var dbHash string
@@ -170,7 +208,6 @@ func loginFormCheck(w http.ResponseWriter, r *http.Request) bool {
 	}
 
 	pwHash := pwHash(pw)
-	log.Println(pwHash, "password hash")
 	dsn := "root:root@tcp(127.0.0.1:3306)/creds"
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -306,7 +343,6 @@ func fileListHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to encode JSON", http.StatusInternalServerError)
 	}
 
-	// fmt.Fprintf(w, `{"files": %q}`, files)
 }
 
 // creates new pages.
@@ -384,26 +420,6 @@ func checkTemplate(r *http.Request) string {
 		return "edit"
 	}
 	return "view"
-}
-
-func createPage(title, body string) error {
-	// reads tmpl file
-	template, err := os.ReadFile("./tmpl/template.html")
-	if err != nil {
-		return fmt.Errorf("could not read template file: %v", err)
-	}
-
-	templateStr := string(template)
-
-	content := strings.ReplaceAll(templateStr, "{{.Title}}", title)
-	content = strings.ReplaceAll(content, "{{.Body}}", body)
-
-	err = os.WriteFile("./data/"+title+".html", []byte(content), 0644)
-	if err != nil {
-		return fmt.Errorf("could not write HTML file: %v", err)
-	}
-
-	return nil
 }
 
 // makes and runs the handler (view, edit, save, etc.), checks to see if the path is valid

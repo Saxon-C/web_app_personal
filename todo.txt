@@ -1,7 +1,3 @@
-In Order:
-    Get view to work completely.
-    Create default tmpl so each page has a default look instead of just the text and body.
-        -(ex: home page link)
-
--Make error pages into template (not priority, just picky)
--Create file listing when viewing.
+-Have a purpose for having accounts.
+    >only Admin can have access to create/edit of pages.
+    >others can do something.

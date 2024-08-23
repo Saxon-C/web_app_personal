@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale1.0">
     <link rel="stylesheet" href="/tmpl/styles.css">
     <title>Create</title>
 </head>
+
 <body>
     <header>
-        <h1>Create</h1> 
+        <h1>Create</h1>
         <nav>
             <ul>
                 <li><a href="/data/home.html">Home</a></li>
                 <li><a href="/data/about.html/">About Me</a></li>
+                <li><a href="/data/portfolio.html">Portfolio</a></li>
+                <li><a href="/data/resume.html">Resume</a></li>
+                <li><a href="/data/contact.html">Contact</a></li>
                 <li><a href="/view/">Index</a></li>
                 <li><a href="/create/">Create</a></li>
                 <li><a href="/edit/">Edit</a></li>
@@ -25,14 +30,14 @@
         <form action="/save/{{.Title}}" method="post">
             <p>Enter Title for new page:</p>
             <div><textarea name="newpage_name" rows="1" cols="20"></textarea></div>
-            
+
             <p>Enter Body text for new page</p>
             <div><textarea name="newpage_body" rows="3" cols="40"></textarea></div>
-            
-            <div><input type = "submit" value = "Save"></div>
+
+            <div><input type="submit" value="Save"></div>
         </form>
     </main>
-        
-    </body>
-    
+
+</body>
+
 </html>
